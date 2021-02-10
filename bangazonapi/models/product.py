@@ -1,5 +1,6 @@
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from django.http.response import HttpResponseBadRequest
 from safedelete.models import SafeDeleteModel
 from safedelete.models import SOFT_DELETE
 from .customer import Customer
@@ -61,9 +62,13 @@ class Product(SafeDeleteModel):
         total_rating = 0
         for rating in ratings:
             total_rating += rating.rating
+        try:
+            avg = total_rating / len(ratings)
+            return avg
+        except:
+            return -1
 
-        avg = total_rating / len(ratings)
-        return avg
+        
 
     class Meta:
         verbose_name = ("product")
