@@ -61,7 +61,7 @@ class Profile(ViewSet):
             }
         """
         try:
-            current_user = Customer.objects.get(user__id=4)
+            current_user = Customer.objects.get(user=request.auth.user)
             serializer = ProfileSerializer(current_user, many=False, context={'request': request})
             return Response(serializer.data)
         except Exception as ex:
