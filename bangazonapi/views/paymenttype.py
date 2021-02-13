@@ -53,7 +53,7 @@ class Payments(ViewSet):
         """
         try:
             customer = Customer.objects.get(user=request.auth.user)
-            payment_type = Payment.objects.get(pk=pk, payment_type__customer=customer)
+            payment_type = Payment.objects.get(pk=pk, customer=customer)
             serializer = PaymentSerializer(
                 payment_type, context={'request': request})
             return Response(serializer.data)
