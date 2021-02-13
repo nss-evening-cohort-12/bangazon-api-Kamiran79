@@ -248,7 +248,7 @@ class Products(ViewSet):
         order = self.request.query_params.get('order_by', None)
         direction = self.request.query_params.get('direction', None)
         number_sold = self.request.query_params.get('number_sold', None)
-        price = self.request.query_params.get('min_price', None)
+        min_price = self.request.query_params.get('min_price', None)
 
         if order is not None:
             order_filter = order
@@ -259,9 +259,9 @@ class Products(ViewSet):
 
             products = products.order_by(order_filter)
 
-        if price is not None:
+        if min_price is not None:
             def price_filter(product):
-                if product.price >= float(price):
+                if product.price >= float(min_price):
                     return True
                 return False                
             products = filter(price_filter, products)
