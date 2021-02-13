@@ -6,7 +6,7 @@ from rest_framework.viewsets import ViewSet
 from rest_framework.response import Response
 from rest_framework import serializers
 from rest_framework import status
-from bangazonapi.models import Product, Customer, ProductCategory
+from bangazonapi.models import Product, Customer, ProductCategory, product
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.parsers import MultiPartParser, FormParser
 
@@ -248,6 +248,7 @@ class Products(ViewSet):
         order = self.request.query_params.get('order_by', None)
         direction = self.request.query_params.get('direction', None)
         number_sold = self.request.query_params.get('number_sold', None)
+        price = self.request.query_params.get('min_price', None)
 
         if order is not None:
             order_filter = order
@@ -257,6 +258,13 @@ class Products(ViewSet):
                     order_filter = f'-{order}'
 
             products = products.order_by(order_filter)
+
+        if price is not None:
+            def price_filter(product):
+                if product.price >= float(price):
+                    return True
+                return False                
+            products = filter(price_filter, products)
 
         if category is not None:
             products = products.filter(category__id=category)
