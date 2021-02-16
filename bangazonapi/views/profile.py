@@ -7,7 +7,7 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.viewsets import ViewSet
-from bangazonapi.models import Order, Customer, Product, OrderProduct, Favorite
+from bangazonapi.models import Order, Customer, Product, OrderProduct, Favorite, Payment
 from .product import ProductSerializer
 from .order import OrderSerializer
 
@@ -67,7 +67,7 @@ class Profile(ViewSet):
         except Exception as ex:
             return HttpResponseServerError(ex)
 
-    @action(methods=['get', 'post', 'delete'], detail=False)
+    @action(methods=['get', 'post', 'delete', 'put'], detail=False)
     def cart(self, request):
         """Shopping cart manipulation"""
 
@@ -207,7 +207,7 @@ class Profile(ViewSet):
             """
 
             try:
-                open_order = Order.objects.get(customer=current_user)
+                open_order = Order.objects.get(customer=current_user, payment_type=None)
                 print(open_order)
             except Order.DoesNotExist as ex:
                 open_order = Order()
@@ -224,6 +224,41 @@ class Profile(ViewSet):
             line_item_json = LineItemSerializer(line_item, many=False, context={'request': request})
 
             return Response(line_item_json.data)
+        if request.method == "PUT":
+            """
+                {
+                    "id": 21,
+                    "url": "http://localhost:8000/orders/21",
+                    "created_date": "2021-02-16",
+                    "payment_type": "http://localhost:8000/paymenttypes/9",
+                    "customer": "http://localhost:8000/customers/7",
+                    "lineitems": [
+                        {
+                            "id": 33,
+                            "product": {
+                                "id": 88,
+                                "name": "Element",
+                                "price": 1727.41,
+                                "number_sold": 12,
+                                "description": "2003 Honda",
+                                "quantity": 3,
+                                "created_date": "2019-05-28",
+                                "location": "Dukoh",
+                                "image_path": null,
+                                "average_rating": -1
+                            }
+                        }
+                    ]
+                }
+            """
+            try:
+                open_order = Order.objects.get(customer=current_user, payment_type=None)
+                open_order.payment_type = Payment.objects.get(pk=request.data["payment_type"])
+                open_order.save()
+            except Order.DoesNotExist as ex:
+                return Response({'message': ex.args[0]}, status=status.HTTP_404_NOT_FOUND)
+            open_order_json = OrderSerializer(open_order, many=False, context={'request': request}).data
+            return Response(open_order_json, status=status.HTTP_204_NO_CONTENT)         
 
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
