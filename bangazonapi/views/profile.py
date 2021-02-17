@@ -262,7 +262,7 @@ class Profile(ViewSet):
 
         return Response({}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    @action(methods=['get'], detail=False)
+    @action(methods=['get','post'], detail=False)
     def favoritesellers(self, request):
         """
         @api {GET} /profile/favoritesellers GET favorite sellers
@@ -311,12 +311,24 @@ class Profile(ViewSet):
             ]
         """
         customer = Customer.objects.get(user=request.auth.user)
-        favorites = Favorite.objects.filter(customer=customer)
-
-        serializer = FavoriteSerializer(
+        if request.method == "GET":
+            favorites = Favorite.objects.filter(customer=customer)
+            serializer = FavoriteSerializer(
             favorites, many=True, context={'request': request})
-        return Response(serializer.data)
+            return Response(serializer.data)
 
+        if request.method == "POST":
+            try:
+                get_favorite_seller_id = Customer.objects.get(pk=request.data["seller"])
+                favorite_seller = Favorite()
+                favorite_seller.customer = customer
+                favorite_seller.seller = get_favorite_seller_id
+                favorite_seller.save()
+                serializer = FavoriteSerializer(
+                favorite_seller, many=False, context={'request': request})            
+                return Response(serializer.data)
+            except Customer.DoesNotExist as ex:
+                return Response({'message': ex.args[0]}, status=status.HTTP_404_NOT_FOUND)
 
 class LineItemSerializer(serializers.HyperlinkedModelSerializer):
     """JSON serializer for products
