@@ -104,7 +104,7 @@ class Products(ViewSet):
             new_product.image_path = data
 
         try:
-            new_product.full_clean()
+            new_product.clean_fields()
             new_product.save()
         except ValidationError as ex:
             return Response({'message': ex.args[0]}, status=status.HTTP_404_NOT_FOUND)
