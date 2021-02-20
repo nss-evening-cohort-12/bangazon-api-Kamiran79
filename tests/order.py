@@ -29,7 +29,6 @@ class OrderTests(APITestCase):
         data = { "name": "Kite", "price": 14.99, "quantity": 60, "description": "It flies high", "category_id": 1, "location": "Pittsburgh" }
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
         response = self.client.post(url, data, format='json')
-        #import pdb; pdb.set_trace()
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
 
@@ -117,7 +116,7 @@ class OrderTests(APITestCase):
 
 
     # TODO: New line item is not added to closed order
-def test_order_paymenttype_id(self):
+    def test_order_paymenttype_id(self):
         """
         Ensure we can add an existing paymenttype to an order.
         """
@@ -128,18 +127,12 @@ def test_order_paymenttype_id(self):
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
         response = self.client.post(url, data, format='json')
 
-
-
-        # DEFINE NEW PROPERTIES FOR GAME
-
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
         payment_data = {
             "payment_type": 1
         }
         response = self.client.put(f"/profile/cart/", payment_data, format="json")
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-
-        # GET GAME AGAIN TO VERIFY CHANGES
 
         json_response = json.loads(response.content)
 
