@@ -107,7 +107,7 @@ class Products(ViewSet):
             new_product.image_path = data
 
         try:
-            new_product.clean_fields()
+            new_product.clean_fields(exclude="image_path")
             new_product.save()
         except ValidationError as ex:
             return Response({'message': ex.args[0]}, status=status.HTTP_400_BAD_REQUEST)

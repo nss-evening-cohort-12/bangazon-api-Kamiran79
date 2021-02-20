@@ -1,3 +1,5 @@
+from bangazonapi.models.payment import Payment
+import datetime
 import json
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -27,6 +29,7 @@ class OrderTests(APITestCase):
         data = { "name": "Kite", "price": 14.99, "quantity": 60, "description": "It flies high", "category_id": 1, "location": "Pittsburgh" }
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
         response = self.client.post(url, data, format='json')
+        #import pdb; pdb.set_trace()
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
 
@@ -81,4 +84,63 @@ class OrderTests(APITestCase):
 
     # TODO: Complete order by adding payment type
 
+    def test_create_paymenttype(self):
+        """
+        Ensure we can add payment type to an order
+        """
+        #Define payment type properties
+        url = "/paymenttypes"
+        data = {
+        "merchant_name": "Amex",
+        "account_number": "000000000111",
+        "expiration_date": "2023-12-12",
+        "create_date": datetime.date.today()
+        }
+        
+        # Make sure request is authenticated
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
+
+        # Initiate request and store response
+        response = self.client.post(url, data, format='json')
+
+        # Assert that the game was created
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        # Parse the JSON in the response body
+        json_response = json.loads(response.content)        
+
+        # Assert that the properties on the created resource are correct
+        self.assertEqual(json_response["merchant_name"], "Amex")
+        self.assertEqual(json_response["account_number"], "000000000111")
+        self.assertEqual(json_response["expiration_date"], "2023-12-12")
+        self.assertEqual(json_response["create_date"], str(datetime.date.today()))
+
+
     # TODO: New line item is not added to closed order
+def test_order_paymenttype_id(self):
+        """
+        Ensure we can add an existing paymenttype to an order.
+        """
+        self.test_create_paymenttype()
+
+        url = "/cart"
+        data = { "product_id": 1 }
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
+        response = self.client.post(url, data, format='json')
+
+
+
+        # DEFINE NEW PROPERTIES FOR GAME
+
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token)
+        payment_data = {
+            "payment_type": 1
+        }
+        response = self.client.put(f"/profile/cart/", payment_data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+        # GET GAME AGAIN TO VERIFY CHANGES
+
+        json_response = json.loads(response.content)
+
+        self.assertNotNull(json_response["payment_type"])
