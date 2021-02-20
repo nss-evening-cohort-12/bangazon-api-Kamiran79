@@ -1,8 +1,11 @@
 """View module for handling requests about products"""
+from django.db.models import fields
+from bangazonapi.models.like import Like
 import base64
 from django.core.files.base import ContentFile
 from django.core.exceptions import ValidationError
 from django.http import HttpResponseServerError
+from rest_framework.decorators import action
 from rest_framework.viewsets import ViewSet
 from rest_framework.response import Response
 from rest_framework import serializers
@@ -293,3 +296,93 @@ class Products(ViewSet):
         serializer = ProductSerializer(
             products, many=True, context={'request': request})
         return Response(serializer.data)
+
+    @action(methods=['get'], detail=False)
+    def liked(self, request):
+        """
+        using the function name liked to be use in URL when getting
+        http://localhost:8000/products/liked
+        and details = false on action because we getting multiple products
+
+        this is what will return array of object Like:
+        [
+            {
+                "id": 3,
+                "product": {
+                    "url": "http://localhost:8000/products/2",
+                    "deleted": null,
+                    "name": "Golf",
+                    "price": 653.59,
+                    "description": "1994 Volkswagen",
+                    "quantity": 4,
+                    "created_date": "2019-07-10",
+                    "location": "Zhongshan",
+                    "image_path": null,
+                    "customer": "http://localhost:8000/customers/4",
+                    "category": "http://localhost:8000/productcategories/2"
+                }
+            }
+        ]
+
+        """
+        customer = Customer.objects.get(user=request.auth.user)
+        liked_products = Like.objects.filter(customer=customer)
+        serializer = LikeProductSerializer(
+        liked_products, many=True, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @action(methods=['post', 'delete'], detail=True)
+    def like(self, request, pk=None):
+        """
+        finction above name like so the url will be:
+        /products/1/like and the number 1 for the pk for the product that we want to like
+        @api {POST} /products/1/like POST new like_product
+        @api {DELETE} /products/1/like DELETE like_product product id = 1
+        for the current user that has liked(post) or dislike(delete)
+        {
+            "id": 4,
+            "product": {
+                "url": "http://localhost:8000/products/3",
+                "deleted": null,
+                "name": "Durango",
+                "price": 541.17,
+                "description": "1998 Dodge",
+                "quantity": 2,
+                "created_date": "2019-05-16",
+                "location": "Górki Wielkie",
+                "image_path": null,
+                "customer": "http://localhost:8000/customers/6",
+                "category": "http://localhost:8000/productcategories/2"
+            }
+        }        
+        """
+        customer = Customer.objects.get(user=request.auth.user)
+        product = Product.objects.get(pk=pk)
+        if request.method == "POST":
+            try:
+                like = Like.objects.get(customer=customer, product=product)
+                print(like)
+            except Like.DoesNotExist as ex:
+                new_like = Like()
+                new_like.customer = customer
+                new_like.product = product
+                new_like.save()
+                serializer = LikeProductSerializer(new_like, many=False, context={'request': request})
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+        if request.method == "DELETE":
+            try:
+                like = Like.objects.get(customer=customer, product=product)
+                like.delete()
+                return Response(status=status.HTTP_204_NO_CONTENT)
+            except Like.DoesNotExist as ex:
+                return Response({'message': ex.args[0]}, status=status.HTTP_404_NOT_FOUND)
+
+
+class LikeProductSerializer(serializers.HyperlinkedModelSerializer)  :
+    """JSON serializer for like product
+
+    """
+    class Meta:
+        model = Like
+        fields = ('id', 'product',)
+        depth = 1
